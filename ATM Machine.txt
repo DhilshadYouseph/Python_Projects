@@ -1,0 +1,180 @@
+"""
+steps are atm will perform:
+1.withdraw
+2.deposit
+3.view balance
+4.change pin
+5.Add new customer
+"""
+import json
+
+
+def read_userfile():
+    user_file = open(r"user_information.txt", "r")
+    user_str = user_file.readline()
+    user_dict = json.loads(user_str)
+    user_file.close()
+    return user_dict
+
+
+customer_details = read_userfile()
+
+
+def check_username(user_name):
+    for j in customer_details.keys():
+        if (j == user_name):
+            return True
+
+
+def check_password(user_name):
+    user_password = int(input("enter the password: "))
+    if (customer_details[user_name]["pin"] == user_password):
+        return True
+
+
+def withdraw_money(user_name):
+    withdraw_amount = int(input("enter the withdrawal amount: "))
+    left_money = customer_details[user_name]["balance"]
+    if (withdraw_amount > left_money):
+        print("Available balance is", left_money, "enter any lesser amount")
+        withdraw_money(user_name)
+    else:
+        print("money successfully withdtrawn:", withdraw_amount)
+        print("balance left is:", left_money - withdraw_amount)
+        left_money = left_money - withdraw_amount
+        customer_details[user_name]["balance"] = left_money
+        print("Thank you for using the bank service.Please visit again.")
+        write_userfile(customer_details)
+
+
+def deposit_money(user_name):
+    deposit_amount = int(input("enter the amount to deposit: "))
+    if (deposit_amount < 0):
+        print("Enter the valid amount.")
+        deposit_money()
+    else:
+        updated_balance = deposit_amount + customer_details[user_name]["balance"]
+        print("your new balance is", updated_balance)
+        customer_details[user_name]["balance"] = updated_balance
+        print("Thank you for using the bank service.Please visit again.")
+        write_userfile(customer_details)
+
+
+def bank_options(user_name):
+    user_options = int(input("1.withdraw money\n2.deposit money\n3.view balance\n"))
+    if (user_options == 1):
+        withdraw_money(user_name)
+    elif (user_options == 2):
+        deposit_money(user_name)
+    elif (user_options == 3):
+        view_balance(user_name)
+    else:
+        print("invalid options selected\nplease visit again")
+
+
+def write_userfile(user_dict):
+    user_file = open(r"user_information.txt", "w")
+
+    user_file.write(str(user_dict).replace('\'', '"'))
+    user_file.close()
+
+
+def view_balance(user_name):
+    print("Available balance is ", customer_details[user_name]["balance"],
+          "\nThank you for using our bank.Please visit again.")
+
+
+def reset_password(user_name):
+    phone_number = int(input("enter the phone number: "))
+    if (customer_details[user_name]["phoneNumber"] == phone_number):
+        secret_key = input("enter the secret key recieved on your phone: ")
+        if (customer_details[user_name]["secretCode"] == secret_key):
+            new_pin = int(input("enter the new pin: "))
+            customer_details[user_name]["pin"] = new_pin
+            print("new pin has successfully set")
+            write_userfile(customer_details)
+            main()
+            return True
+        else:
+            print("invalid secret key eneterd. please visit our bank again.")
+
+    else:
+        print("invalid phone number entered.please visit the bank again.")
+        return False
+
+
+def new_account():
+    total_length = len(customer_details)
+    user_name = input("enter your username: ")
+    if (check_username(user_name)):
+        print("user already exist.Please try with different username.")
+        new_account()
+    user_pin = int(input("enter your four digits pin"))
+    if (len(str(user_pin)) > 4 or len(str(user_pin)) < 4):
+        print("invalid length pin entered.Please enter four digits pin only")
+        new_account()
+    user_balance_check = int(input(
+        "press 1 for if you want to deposit any initial amount to your new account.\nelse press any other number."))
+    if (user_balance_check == 1):
+        user_deposit = int(input("enter the money you wanted to deposit: "))
+    else:
+        user_deposit = 0
+    secret_code = input("enter your secret code: ")
+    phone_number = int(input("enter your phone number: "))
+    if (len(str(phone_number)) < 10 or len(str(phone_number)) > 10):
+        print("invalid phone number entered.Please all the fields carefully.")
+        new_account()
+    user_id = "u_" + user_name
+    customer_id = total_length + 1
+    customer_details[user_id] = {"customerId": customer_id, "customerName": user_name, "balance": user_deposit,
+                                 "pin": user_pin, "secretCode": secret_code, "phoneNumber": phone_number}
+    print("your account creation is succesfully completed.")
+    login_choice=int(input("For login into your account,press 1 and press 2 for exit"))
+    if(login_choice==1):
+        main()
+    else:
+        print("Thanks for visiting our Bank.")
+
+    write_userfile(customer_details)
+
+
+def main():
+    print("Welcome to ABC ATM. If you don't have account with us,press enter for more options.")
+    user_name = input("Enter your username: ")
+    user_exist = check_username(user_name)
+    if (user_exist):
+        print("Welcome", customer_details[user_name]["customerName"])
+        user_password_check = check_password(user_name)
+        if (user_password_check):
+            bank_options(user_name)
+
+        else:
+            print("entered password is incorrect")
+            password_options = int(input("1.Retry Password\n2.Reset password\n3.Exit\n"))
+            if (password_options == 1):
+                if (check_password(user_name)):
+                    bank_options(user_name)
+                else:
+                    print("Wrong password entered again.Please visit the bank again.")
+            elif (password_options == 2):
+                reset_password(user_name)
+            elif (password_options == 3):
+                print("Thank you for using our bank.Please visit again")
+            else:
+                print("Invalid Option entered.Please visit our bank again.")
+
+    else:
+
+        user_choice = int(
+            input("Enter 1 for retry username\nEnter 2 for open account with us\nEnter 3 for if you want to exit\n"))
+        if (user_choice == 1):
+            main()
+        elif (user_choice == 2):
+            new_account()
+        elif (user_choice == 3):
+            print("Thank you for using our bank.Please visit again")
+        else:
+            print("Invalid Option entered.Please visit our bank again.")
+
+
+main()
